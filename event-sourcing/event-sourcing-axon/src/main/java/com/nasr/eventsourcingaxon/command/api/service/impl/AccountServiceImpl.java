@@ -7,16 +7,15 @@ import com.nasr.eventsourcingaxon.command.api.domain.Account;
 import com.nasr.eventsourcingaxon.command.api.domain.User;
 import com.nasr.eventsourcingaxon.command.api.dto.request.CreateAccountRequestDto;
 import com.nasr.eventsourcingaxon.command.api.dto.request.UpdateBalanceAccountRequestDto;
-import com.nasr.eventsourcingaxon.command.api.dto.response.AccountCreatedResponseDto;
-import com.nasr.eventsourcingaxon.command.api.dto.response.UpdateBalanceAccountResponseDto;
-import com.nasr.eventsourcingaxon.command.api.dto.response.UserCreatedResponseDto;
+import com.nasr.eventsourcingaxon.command.api.dto.response.AccountWithUserInfoDto;
+import com.nasr.eventsourcingaxon.command.api.dto.response.AccountResponseDto;
+import com.nasr.eventsourcingaxon.command.api.dto.response.UserResponseDto;
 import com.nasr.eventsourcingaxon.command.api.exception.EntityNotFoundException;
 import com.nasr.eventsourcingaxon.command.api.mapper.AccountMapper;
 import com.nasr.eventsourcingaxon.command.api.repository.AccountRepository;
 import com.nasr.eventsourcingaxon.command.api.service.AccountService;
 import com.nasr.eventsourcingaxon.command.api.service.UserService;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,7 +46,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     @Transactional
-    public AccountCreatedResponseDto save(CreateAccountRequestDto dto) {
+    public AccountWithUserInfoDto save(CreateAccountRequestDto dto) {
         Account account = accountMapper.convertCreateAccountDtoToEntity(dto);
         String accountId = UUID.randomUUID().toString();
 
@@ -73,7 +72,7 @@ public class AccountServiceImpl implements AccountService {
 
         } else {
 
-            UserCreatedResponseDto userDto = userService.save(dto.getUserDto());
+            UserResponseDto userDto = userService.save(dto.getUserDto());
             account.setUser(new User(userDto.getId()));
             repository.save(account);
 
@@ -82,13 +81,13 @@ public class AccountServiceImpl implements AccountService {
 
         }
 
-        return accountMapper.convertAccountToAccountCreateDto(account);
+        return accountMapper.convertAccountToAccountWithUserInfoDto(account);
 
     }
 
     @Override
     @Transactional
-    public UpdateBalanceAccountResponseDto updateBalanceAccount(UpdateBalanceAccountRequestDto dto) {
+    public AccountResponseDto updateBalanceAccount(UpdateBalanceAccountRequestDto dto) {
 
         Account account = repository.findById(dto.getId())
                 .orElseThrow(
@@ -115,6 +114,6 @@ public class AccountServiceImpl implements AccountService {
             );
         }
 
-        return accountMapper.convertEntityToUpdateBalanceAccountDto(account);
+        return accountMapper.convertEntityToAccountDto(account);
     }
 }

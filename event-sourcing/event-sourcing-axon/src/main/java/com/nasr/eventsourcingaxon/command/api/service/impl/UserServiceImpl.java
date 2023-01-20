@@ -1,24 +1,20 @@
 package com.nasr.eventsourcingaxon.command.api.service.impl;
 
 import com.nasr.eventsourcingaxon.command.api.commands.CreateUserCommand;
+import com.nasr.eventsourcingaxon.command.api.commands.UpdateUserCommand;
 import com.nasr.eventsourcingaxon.command.api.domain.User;
 import com.nasr.eventsourcingaxon.command.api.dto.request.CreateUserRequestDto;
-import com.nasr.eventsourcingaxon.command.api.dto.response.UserCreatedResponseDto;
+import com.nasr.eventsourcingaxon.command.api.dto.request.UpdateUserRequestDto;
+import com.nasr.eventsourcingaxon.command.api.dto.response.UserResponseDto;
+import com.nasr.eventsourcingaxon.command.api.exception.EntityNotFoundException;
 import com.nasr.eventsourcingaxon.command.api.exception.UserNotFoundException;
 import com.nasr.eventsourcingaxon.command.api.mapper.UserMapper;
 import com.nasr.eventsourcingaxon.command.api.repository.UserRepository;
 import com.nasr.eventsourcingaxon.command.api.service.UserService;
 import com.nasr.eventsourcingaxon.command.api.service.validator.UserRegistrationValidationResult;
-import com.nasr.eventsourcingaxon.command.api.service.validator.UserRegistrationValidator;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 
 import java.util.UUID;
 
@@ -54,7 +50,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserCreatedResponseDto save(CreateUserRequestDto userDto) {
+    public UserResponseDto save(CreateUserRequestDto userDto) {
 
         boolean existsByEmail = repository.existsByEmail(userDto.getEmail());
 
@@ -86,6 +82,27 @@ public class UserServiceImpl implements UserService {
                         .build()
 
         );
-        return userMapper.convertEntityToCreateUserDto(user);
+        return userMapper.convertEntityToUserDto(user);
+    }
+
+    @Override
+    @Transactional
+    public UserResponseDto update(String id, UpdateUserRequestDto dto) {
+         repository.update(id, dto);
+
+        User user = repository.findById(id)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("dont find any user with id : " + id));
+
+        commandGateway.send(
+                UpdateUserCommand.builder()
+                        .id(id)
+                        .firstName(dto.getFirstName())
+                        .lastName(dto.getLastName())
+                        .password(dto.getPassword())
+                        .build()
+        );
+
+        return userMapper.convertEntityToUserDto(user);
     }
 }
