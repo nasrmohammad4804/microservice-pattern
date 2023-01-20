@@ -2,6 +2,7 @@ package com.nasr.eventsourcingaxon.command.api.controller;
 
 import com.nasr.eventsourcingaxon.command.api.dto.request.CreateAccountRequestDto;
 import com.nasr.eventsourcingaxon.command.api.dto.request.UpdateBalanceAccountRequestDto;
+import com.nasr.eventsourcingaxon.command.api.dto.response.AccountResponseDto;
 import com.nasr.eventsourcingaxon.command.api.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -23,8 +24,15 @@ public class AccountController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateBalanceAccount(@RequestBody @Valid UpdateBalanceAccountRequestDto dto){
-        accountService.updateBalanceAccount(dto);
-        return null;
+    public ResponseEntity<?> updateBalanceAccount(@RequestBody @Valid UpdateBalanceAccountRequestDto dto){
+        AccountResponseDto accountResponseDto = accountService.updateBalanceAccount(dto);
+        return ResponseEntity.ok(accountResponseDto);
+    }
+
+    @GetMapping("/{id}/events")
+    public ResponseEntity<?> getEvents(@PathVariable String id){
+        return ResponseEntity.ok(
+                accountService.getEventsById(id)
+        );
     }
 }

@@ -16,10 +16,14 @@ import com.nasr.eventsourcingaxon.command.api.repository.AccountRepository;
 import com.nasr.eventsourcingaxon.command.api.service.AccountService;
 import com.nasr.eventsourcingaxon.command.api.service.UserService;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.nasr.eventsourcingaxon.command.api.enumerate.AccountBalanceChangeType.CREDITED;
 import static com.nasr.eventsourcingaxon.command.api.enumerate.AccountBalanceChangeType.DEBITED;
@@ -37,11 +41,16 @@ public class AccountServiceImpl implements AccountService {
 
     private final CommandGateway commandGateway;
 
-    public AccountServiceImpl(AccountRepository repository, UserService userService, AccountMapper accountMapper,CommandGateway gateway) {
+    private final EventStore eventStore;
+
+    public AccountServiceImpl(AccountRepository repository, UserService userService,
+                              AccountMapper accountMapper, CommandGateway gateway, EventStore eventStore) {
+
         this.repository = repository;
         this.userService = userService;
         this.accountMapper = accountMapper;
-        this.commandGateway =gateway;
+        this.commandGateway = gateway;
+        this.eventStore = eventStore;
     }
 
     @Override
@@ -94,7 +103,7 @@ public class AccountServiceImpl implements AccountService {
                         () -> new EntityNotFoundException("dont find any account with id : " + dto.getId())
                 );
 
-        if (dto.getAccountBalanceChangeType().equals(CREDITED)){
+        if (dto.getAccountBalanceChangeType().equals(CREDITED)) {
             account.setBalance(account.getBalance() + dto.getAmount());
             commandGateway.send(
                     CreditMoneyAccountCommand.builder()
@@ -102,9 +111,7 @@ public class AccountServiceImpl implements AccountService {
                             .amount(dto.getAmount())
                             .build()
             );
-        }
-
-        else if (dto.getAccountBalanceChangeType().equals(DEBITED)){
+        } else if (dto.getAccountBalanceChangeType().equals(DEBITED)) {
             account.setBalance(account.getBalance() - dto.getAmount());
             commandGateway.send(
                     DebitMoneyAccountCommand.builder()
@@ -115,5 +122,14 @@ public class AccountServiceImpl implements AccountService {
         }
 
         return accountMapper.convertEntityToAccountDto(account);
+    }
+
+    @Override
+    public List<Object> getEventsById(String id) {
+
+        return eventStore.readEvents(id)
+                .asStream()
+                .map(Message::getPayload)
+                .collect(Collectors.toList());
     }
 }

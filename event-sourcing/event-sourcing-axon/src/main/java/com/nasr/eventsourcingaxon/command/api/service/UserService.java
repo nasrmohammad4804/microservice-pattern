@@ -5,6 +5,8 @@ import com.nasr.eventsourcingaxon.command.api.dto.request.CreateUserRequestDto;
 import com.nasr.eventsourcingaxon.command.api.dto.request.UpdateUserRequestDto;
 import com.nasr.eventsourcingaxon.command.api.dto.response.UserResponseDto;
 
+import java.util.List;
+
 public interface UserService {
 
     User getById(String userId);
@@ -14,4 +16,6 @@ public interface UserService {
     UserResponseDto save(CreateUserRequestDto userDto);
 
     UserResponseDto update(String id, UpdateUserRequestDto dto);
+
+    List<Object> getUserEventsById(String id);
 }

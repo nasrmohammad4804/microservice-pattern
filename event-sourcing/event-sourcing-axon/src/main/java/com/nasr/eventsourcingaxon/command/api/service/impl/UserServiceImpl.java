@@ -13,10 +13,14 @@ import com.nasr.eventsourcingaxon.command.api.repository.UserRepository;
 import com.nasr.eventsourcingaxon.command.api.service.UserService;
 import com.nasr.eventsourcingaxon.command.api.service.validator.UserRegistrationValidationResult;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.nasr.eventsourcingaxon.command.api.service.validator.UserRegistrationValidationResult.OK;
 import static com.nasr.eventsourcingaxon.command.api.service.validator.UserRegistrationValidator.*;
@@ -29,12 +33,15 @@ public class UserServiceImpl implements UserService {
 
     private UserMapper userMapper;
 
+    private final EventStore eventStore;
+
     private final CommandGateway commandGateway;
 
-    public UserServiceImpl(UserRepository repository, UserMapper userMapper, CommandGateway gateway) {
+    public UserServiceImpl(UserRepository repository, UserMapper userMapper, CommandGateway gateway,EventStore eventStore) {
         this.repository = repository;
         this.userMapper = userMapper;
         this.commandGateway=gateway;
+        this.eventStore=eventStore;
     }
 
     @Override
@@ -104,5 +111,14 @@ public class UserServiceImpl implements UserService {
         );
 
         return userMapper.convertEntityToUserDto(user);
+    }
+
+    @Override
+    public List<Object> getUserEventsById(String id) {
+
+        return eventStore.readEvents(id)
+                .asStream()
+                .map(Message::getPayload)
+                .collect(Collectors.toList());
     }
 }

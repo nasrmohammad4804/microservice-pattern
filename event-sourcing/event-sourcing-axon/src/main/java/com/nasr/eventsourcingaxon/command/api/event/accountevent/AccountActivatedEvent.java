@@ -7,6 +7,7 @@ import lombok.*;
 
 @Getter
 @NoArgsConstructor
+@Setter
 public class AccountActivatedEvent extends BaseEvent<String> {
 
     private AccountStatus status;

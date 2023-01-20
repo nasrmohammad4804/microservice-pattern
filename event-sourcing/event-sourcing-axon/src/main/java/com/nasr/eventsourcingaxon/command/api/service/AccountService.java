@@ -5,10 +5,14 @@ import com.nasr.eventsourcingaxon.command.api.dto.request.UpdateBalanceAccountRe
 import com.nasr.eventsourcingaxon.command.api.dto.response.AccountWithUserInfoDto;
 import com.nasr.eventsourcingaxon.command.api.dto.response.AccountResponseDto;
 
+import java.util.List;
+
 public interface AccountService {
 
 
     AccountWithUserInfoDto save(CreateAccountRequestDto dto);
 
     AccountResponseDto updateBalanceAccount(UpdateBalanceAccountRequestDto dto);
+
+    List<Object> getEventsById(String id);
 }

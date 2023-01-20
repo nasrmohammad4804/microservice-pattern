@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
@@ -20,6 +22,12 @@ public class UserController {
         return ResponseEntity.ok(
                 responseDto
         );
+    }
+
+    @GetMapping("/{id}/events")
+    public ResponseEntity<?> getEvents(@PathVariable String id){
+        List<Object> events = userService.getUserEventsById(id);
+        return ResponseEntity.ok(events);
     }
 
 }
