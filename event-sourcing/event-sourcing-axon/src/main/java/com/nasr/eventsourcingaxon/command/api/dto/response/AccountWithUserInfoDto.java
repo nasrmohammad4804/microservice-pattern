@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AccountCreatedResponseDto {
+public class AccountWithUserInfoDto {
 
     private String id;
 
@@ -18,5 +18,5 @@ public class AccountCreatedResponseDto {
 
     private String currency;
 
-    private UserCreatedResponseDto userDto;
+    private UserResponseDto userDto;
 }

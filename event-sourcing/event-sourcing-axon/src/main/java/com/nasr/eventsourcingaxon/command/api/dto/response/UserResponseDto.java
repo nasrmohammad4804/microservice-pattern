@@ -7,11 +7,14 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateBalanceAccountResponseDto {
+public class UserResponseDto {
 
     private String id;
 
-    private Double balance;
+    private String firstName;
 
-    private String currency;
+    private String lastName;
+
+    private String email;
+
 }

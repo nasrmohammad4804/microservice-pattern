@@ -2,7 +2,8 @@ package com.nasr.eventsourcingaxon.command.api.service;
 
 import com.nasr.eventsourcingaxon.command.api.domain.User;
 import com.nasr.eventsourcingaxon.command.api.dto.request.CreateUserRequestDto;
-import com.nasr.eventsourcingaxon.command.api.dto.response.UserCreatedResponseDto;
+import com.nasr.eventsourcingaxon.command.api.dto.request.UpdateUserRequestDto;
+import com.nasr.eventsourcingaxon.command.api.dto.response.UserResponseDto;
 
 public interface UserService {
 
@@ -10,5 +11,7 @@ public interface UserService {
 
     boolean existsById(String userId);
 
-    UserCreatedResponseDto save(CreateUserRequestDto userDto);
+    UserResponseDto save(CreateUserRequestDto userDto);
+
+    UserResponseDto update(String id, UpdateUserRequestDto dto);
 }
