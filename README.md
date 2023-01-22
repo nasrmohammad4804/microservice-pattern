@@ -1,2 +1,2 @@
 # microservice-pattern
-this repository for microservice pattern such as (SAGA- CQRS-event sourcing , ...)
+this repository for learn DDD concept and implement microservice pattern  such as (SAGA - CQRS - Event Sourcing)
