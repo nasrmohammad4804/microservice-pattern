@@ -1,0 +1,7 @@
+controller advice work on controller layer and command dispatch interceptor & command handler
+but if exception occurred in event handler in same application aborted this and continue other event handler
+also dont propagate exception occurred in event handler for this need to add bean of ListenerInvocationErrorHandler
+and if exception occurred in one of event handler block that as soon as possible and
+rollback transaction (event sourcing with other event handler) if using subscribing event processing that manages
+in same thread it is useful whenever we want to handle transaction in same application using subscribing event processing
+but if want to handle exception and transaction in across different microservice we need to use saga pattern

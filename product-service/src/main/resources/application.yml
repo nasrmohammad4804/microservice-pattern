@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: PRODUCT-SERVICE
+  datasource:
+    hikari:
+      dataSourceProperties:
+        fastConnectionFailoverEnabled: true
+      leak-detection-threshold: 5000
+      product:
+        jdbcUrl: jdbc:h2:./data/productdb;AUTO_SERVER=true
+        username: mohammad
+        password: 1234
+        driver-class-name: org.h2.Driver
+      lookup:
+        jdbcUrl: jdbc:h2:./lookupdata/productdb;AUTO_SERVER=true
+        username: mohammad
+        password: 4804
+        driver-class-name: org.h2.Driver
+
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+      use-new-id-generator-mappings: false
+    generate-ddl: true
+    database: h2
+
+  h2:
+    console:
+      enabled: true
+      settings:
+        web-allow-others: true
+  main:
+    allow-circular-references: true
+server:
+  #  whenever setting port number to zero port number picked up on server available port number automatically
+  #  then when set port=0 then port is randomly selected
+  port: 8080
+
+# every application need to have unique instance id
+#because hostname:port made instance id then
+#if you run this application multiple times then don't get unique instance id
+# because of that i  create instanceId with formula -> hostname:randoValue
+eureka:
+  client:
+    service-url:
+      defaultZone: "http://localhost:8761/eureka"
+axon:
+  eventhandling:
+    processors:
+      product-group:
+        mode: subscribing
