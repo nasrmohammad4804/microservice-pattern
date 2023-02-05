@@ -1,0 +1,27 @@
+server:
+  port: 80
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+#      routing has 2 way -> 1 . gateway discovery locator 2. set routes and path
+#      we can use cloud.gateway.discovery.locator.enable=true
+# and don't write any route but in request after port need to write service name
+# for example for /products use http://localhost:80/PRODUCT-SERVICE/products
+# or we can use route and path and if gateway find path then get uri and route request like bellow
+spring:
+  cloud:
+    gateway:
+        routes:
+          - id: product-service-route
+            uri: lb://PRODUCT-SERVICE
+            predicates:
+              - Path=/products/**
+
+          - id: order-service-route
+            uri: lb://ORDER-SERVICE
+            predicates:
+              - Path=/orders/**
+  application:
+    name: API-GATEWAY
+
