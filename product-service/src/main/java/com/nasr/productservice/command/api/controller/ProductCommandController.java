@@ -33,16 +33,4 @@ public class ProductCommandController {
                 commandGateway.sendAndWait(command)
         );
     }
-
-    @GetMapping("/test")
-    public String test(){
-       return commandGateway.sendAndWait(
-                ReserveProductCommand.builder()
-                        .customerId("1")
-                        .orderDetailData(
-                                new OrderDetailData("5f1b4b60-46a3-43fb-ab7a-0b685111d919",24)
-                        )
-                        .build()
-        );
-    }
 }
