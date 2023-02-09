@@ -5,15 +5,16 @@ import com.nasr.orderservice.core.enumeration.OrderStatus;
 import lombok.Getter;
 import lombok.Setter;
 
+import static com.nasr.orderservice.core.enumeration.OrderStatus.*;
+
 @Setter
 @Getter
-public class OrderApprovedEvent  {
+public class OrderApprovedEvent  extends BaseEvent<String>{
 
-    private String orderId;
     private final OrderStatus orderStatus;
 
-    public OrderApprovedEvent(String orderId, OrderStatus orderStatus) {
-        this.orderId=orderId;
-        this.orderStatus = orderStatus;
+    public OrderApprovedEvent(String orderId) {
+        super(orderId);
+        this.orderStatus = APPROVED;
     }
 }

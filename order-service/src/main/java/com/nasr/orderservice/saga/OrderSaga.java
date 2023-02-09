@@ -1,11 +1,22 @@
 package com.nasr.orderservice.saga;
 
+import com.nasr.core.base.event.BaseEvent;
+import com.nasr.core.command.CancelPaymentProcessCommand;
+import com.nasr.core.command.CancelProductReservationCommand;
+import com.nasr.core.command.ProcessPaymentCommand;
 import com.nasr.core.command.ReserveProductCommand;
+import com.nasr.core.event.PaymentProcessCancelledEvent;
+import com.nasr.core.event.PaymentProcessedEvent;
+import com.nasr.core.event.ProductReservationCancelledEvent;
 import com.nasr.core.event.ProductReservedEvent;
-import com.nasr.core.model.UserPaymentDetailResponseDto;
+import com.nasr.core.model.OrderDetailData;
+import com.nasr.core.model.UserPaymentDetail;
 import com.nasr.core.query.GetUserPaymentDetailQuery;
+import com.nasr.orderservice.core.command.ApproveOrderCommand;
+import com.nasr.orderservice.core.command.RejectOrderCommand;
 import com.nasr.orderservice.core.event.OrderApprovedEvent;
 import com.nasr.orderservice.core.event.OrderCreatedEvent;
+import com.nasr.orderservice.core.event.OrderRejectedEvent;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +28,13 @@ import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.spring.stereotype.Saga;
 import org.springframework.beans.factory.annotation.Autowired;
+
+/*
+ * saga instance start with orderCreatedEvent and maybe between process fail
+ * then when saga ends with orderApprovedEvent that we know all step is successful
+ * but if we arrive to orderRejectEvent we roll back all changes with reversOrder and
+ * we can say transaction rollback confidentlly
+ * */
 
 @Saga
 @Slf4j
@@ -31,20 +49,19 @@ public class OrderSaga {
     private transient QueryGateway queryGateway;
 
     @StartSaga
-    @SagaEventHandler(associationProperty = "orderId")
+    @SagaEventHandler(associationProperty = "id", keyName = "orderId")
     public void handle(OrderCreatedEvent event) {
 
-        log.info("orderCreateEvent received from order service with orderId: {}", event.getOrderId());
+        log.info("orderCreateEvent received from order service with orderId: {}", event.getId());
 
         ReserveProductCommand command = new ReserveProductCommand(
-                event.getOrderId(), event.getCustomerId(), event.getTotalAmount(), event.getOrderDetailData()
+                event.getId(), event.getCustomerId(), event.getTotalAmount(), event.getOrderDetailData()
         );
 
         CommandCallback<ReserveProductCommand, Object> commandCallback = (commandMessage, commandResultMessage) -> {
             if (commandResultMessage.isExceptional()) {
-                commandResultMessage.exceptionResult().printStackTrace();
-                //todo if command processing failed in reservedProductCommand use compensation transaction
-                //need to raise rejectOrderCommand
+                log.error("productReservationCommand was not successful and we need to start RejectOrderCommand compensating transaction ");
+                rejectOrder(event, commandResultMessage.exceptionResult().getMessage());
             }
 
         };
@@ -62,13 +79,14 @@ public class OrderSaga {
 
     @SagaEventHandler(associationProperty = "orderId")
     public void handle(ProductReservedEvent event) {
-        log.info("productReservedEvent received from product service with id :  {}", event.getProductId());
+        log.info("productReservedEvent received from product service with id :  {}", event.getId());
 
         GetUserPaymentDetailQuery query = new GetUserPaymentDetailQuery(event.getCustomerId());
 
+        UserPaymentDetail userPaymentDetail;
         try {
 
-            UserPaymentDetailResponseDto userPaymentDetail = queryGateway.query(query, UserPaymentDetailResponseDto.class)
+            userPaymentDetail = queryGateway.query(query, UserPaymentDetail.class)
                     .join();
 
             log.info("userPaymentDetail successfully fetched from user-service for userId: {}  with name: {}",
@@ -76,18 +94,111 @@ public class OrderSaga {
 
         } catch (Exception e) {
             log.error("getUserPaymentDetailQuery process was not successful !");
-            //compensating transaction
+
+            /* start compensating transaction for cancelProductReservation */
+            cancelProductReservation(event, e.getCause().getMessage());
+            return;
         }
 
 
+        ProcessPaymentCommand command = ProcessPaymentCommand.builder()
+                .orderId(event.getOrderId())
+                .totalAmount(event.getTotalAmount())
+                .paymentDetail(userPaymentDetail.getPaymentDetail())
+                .orderDetailData(new OrderDetailData(event.getId(), event.getQuantity()))
+                .build();
+
+        CommandCallback<ProcessPaymentCommand, Object> callback = (commandMessage, commandResultMessage) -> {
+            if (commandResultMessage.isExceptional()) {
+                log.error("dont able to process payment command with cause : {}", commandResultMessage.exceptionResult().getMessage());
+                /* start compensating transaction for cancelProductReservation */
+                cancelProductReservation(event, commandResultMessage.exceptionResult().getMessage());
+            }
+        };
+        commandGateway.send(command, callback);
+
+    }
+
+    @SagaEventHandler(associationProperty = "orderId")
+    public void handle(PaymentProcessedEvent event) {
+        log.info("paymentProcessedEvent received from payment-service with paymentId : {}", event.getId());
+
+        ApproveOrderCommand command = new ApproveOrderCommand(event.getOrderId());
+
+        CommandCallback<ApproveOrderCommand, ?> callback = (commandMessage, commandResultMessage) -> {
+            if (commandResultMessage.isExceptional()) {
+                log.error("dont able to approve order with id : " + event.getOrderId());
+                /* start compensating transaction for payment service and deposit money to user account with paymentDetails */
+                cancelPaymentProcess(event, commandResultMessage.exceptionResult().getMessage());
+
+            }
+        };
+        commandGateway.send(command, callback);
     }
 
 
     @EndSaga
-    @SagaEventHandler(associationProperty = "orderId")
+    @SagaEventHandler(associationProperty = "id", keyName = "orderId")
     public void handle(OrderApprovedEvent event) {
-        log.info("orderApprovedEvent received from order service with orderId: {}", event.getOrderId());
-
+        log.info("order is approved . Order Saga is completed for orderId : " + event.getId());
     }
+
+
+    @SagaEventHandler(associationProperty = "orderId")
+    public void handle(ProductReservationCancelledEvent event) {
+        log.info("product Reservation Cancelled with product id : {}   and orderId: {}", event.getId(), event.getOrderId());
+        rejectOrder(new BaseEvent<>(event.getOrderId()), event.getReason());
+    }
+
+    @SagaEventHandler(associationProperty = "orderId")
+    public void handle(PaymentProcessCancelledEvent event){
+        log.info("payment process reverted for paymentId : {}",event.getId());
+        cancelProductReservation(
+                new ProductReservedEvent(event.getOrderId(),null,null,event.getOrderDetailData()),event.getReason()
+        );
+    }
+
+
+    @EndSaga
+    @SagaEventHandler(associationProperty = "id", keyName = "orderId")
+    public void handle(OrderRejectedEvent event) {
+        log.info("order is rejected . Order Saga completed for orderId : " + event.getId());
+    }
+
+
+    private void cancelProductReservation(ProductReservedEvent event, String reason) {
+
+        CancelProductReservationCommand command = CancelProductReservationCommand.builder()
+                .orderId(event.getOrderId())
+                .productId(event.getId())
+                .quantity(event.getQuantity())
+                .reason(reason)
+                .build();
+
+        commandGateway.send(command);
+    }
+
+    private void cancelPaymentProcess(PaymentProcessedEvent event, String message) {
+
+        CancelPaymentProcessCommand command = CancelPaymentProcessCommand
+                .builder()
+                .paymentId(event.getId())
+                .orderId(event.getOrderId())
+                .totalAmount(event.getTotalAmount())
+                .paymentDetail(event.getPaymentDetail())
+                .orderDetailData(event.getOrderDetailData())
+                .reason(message)
+                .build();
+
+        commandGateway.send(command);
+    }
+
+    private void rejectOrder(BaseEvent<String> event, String reason) {
+
+        RejectOrderCommand command = new RejectOrderCommand(event.getId(), reason);
+
+        commandGateway.send(command);
+    }
+
 
 }

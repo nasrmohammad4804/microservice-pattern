@@ -1,5 +1,6 @@
 package com.nasr.orderservice.query.api.service.impl;
 
+import com.nasr.orderservice.core.enumeration.OrderStatus;
 import com.nasr.orderservice.query.api.data.Order;
 import com.nasr.orderservice.query.api.data.OrderDetail;
 import com.nasr.orderservice.query.api.repository.OrderQueryRepository;
@@ -26,4 +27,15 @@ public class OrderQueryServiceImpl implements OrderQueryService {
         repository.save(order);
         orderDetailQueryService.save(orderDetail);
     }
+
+    @Override
+    @Transactional
+    public void updateOrderStatus(String orderId, OrderStatus orderStatus) {
+
+        Order order = repository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("dont find any order with id : " + orderId));
+
+        order.setOrderStatus(orderStatus);
+    }
+
 }

@@ -28,6 +28,6 @@ axon:
 
   eventhandling:
     processors:
-      product-group:
+      order_group:
         mode: subscribing
 

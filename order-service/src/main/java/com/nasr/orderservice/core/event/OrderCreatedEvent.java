@@ -14,11 +14,8 @@ import java.time.LocalDateTime;
 
 @Setter
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-public class OrderCreatedEvent  {
+public class OrderCreatedEvent extends BaseEvent<String> {
 
-    private String orderId;
     private BigDecimal totalAmount;
     private LocalDateTime orderDate;
     private String customerId;
@@ -28,7 +25,7 @@ public class OrderCreatedEvent  {
 
     public OrderCreatedEvent(OrderCreatedEventBuilder builder) {
 
-        this.orderId=builder.orderId;
+        super(builder.getOrderId());
         this.customerId=builder.customerId;
         this.orderDate=builder.orderDate;
         this.totalAmount=builder.totalAmount;

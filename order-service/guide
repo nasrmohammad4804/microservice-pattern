@@ -1,0 +1,35 @@
+i considered lookup table for set base consistency validation
+when ApproveOrderCommand or RejectOrderCommand is received
+we can check exists in message dispatch interceptor
+
+note - maybe you think look up is redundant because we ensure that
+command such as ApprovedOrderCommand or RejectOrderCommand received is valid
+but maybe developer made mistake and send invalid orderId in this command from OrderSaga
+
+we are able to remove lookup and check it exists in  void updateOrderStatus(String orderId, OrderStatus orderStatus) method
+of orderQueryService this way is correct but better than have validation and check our data
+in command handler or interceptor why this reason i use lookup that carry orderId
+
+----------------------------------------------------------------
+###important note for deleting event on eventstore on compensating transaction ###
+if we want to start compensating transaction we dont must delete event from event store
+because event in event store called source of truth that means
+event that took place is immutable and we dont able to remove it or update it
+
+
+assume scenario when processPaymentDetail was not successful we must use compensating
+transaction at first for CancelReserveProductCommand (because use reverse order)
+and increase product that already reserved
+and after that raise orderRejectCommand
+notice - if we think normal scenario we must delete order with details in orderService
+for this reason we must delete corresponding aggregate in event store
+because its impossible event exists in event store but dont exists any record in read database
+then we need to delete aggregate . in practical its possible but event mean
+thing happened in last and we cant to remove past history
+then better way to create new event and mark this as reject
+ and also update read database and mark this as reject or deleted
+
+------
+summery explanation is we are able to remove event in event store
+but never do that because they are source of truth
+------

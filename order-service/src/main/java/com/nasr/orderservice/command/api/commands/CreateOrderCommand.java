@@ -20,13 +20,13 @@ public class CreateOrderCommand extends BaseCommand<String> {
 
     @Builder
     public CreateOrderCommand(String orderId, BigDecimal totalAmount, LocalDateTime orderDate,
-                              String customerId,String address, OrderDetailData orderDetail) {
+                              String customerId, String address, OrderDetailData orderDetail) {
 
         super(orderId);
         this.totalAmount = totalAmount;
         this.orderDate = orderDate;
         this.customerId = customerId;
-        this.address=address;
+        this.address = address;
         this.orderDetailsData = orderDetail;
     }
 

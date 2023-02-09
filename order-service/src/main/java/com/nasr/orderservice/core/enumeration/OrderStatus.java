@@ -4,5 +4,5 @@ import lombok.Getter;
 
 @Getter
 public enum OrderStatus {
-    CREATED,FAILED,APPROVED
+    CREATED, REJECTED,APPROVED
 }
