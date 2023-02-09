@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 @Data
 @Builder
-public class UserPaymentDetailResponseDto {
+public class UserPaymentDetail {
 
     private String customerId;
     private String firstName;
