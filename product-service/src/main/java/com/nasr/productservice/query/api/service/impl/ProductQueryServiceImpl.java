@@ -42,4 +42,10 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     public void reduceProductQuantity(OrderDetailData orderDetailData) {
         repository.reduceQuantity(orderDetailData.getProductId(),orderDetailData.getOrderQuantity());
     }
+
+    @Override
+    @Transactional
+    public void increaseProductQuantity(String id, Integer quantity) {
+        repository.increaseQuantity(id,quantity);
+    }
 }

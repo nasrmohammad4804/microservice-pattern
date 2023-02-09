@@ -1,7 +1,9 @@
 package com.nasr.productservice.command.api.aggregate;
 
 import com.nasr.core.base.aggregate.BaseAggregate;
+import com.nasr.core.command.CancelProductReservationCommand;
 import com.nasr.core.command.ReserveProductCommand;
+import com.nasr.core.event.ProductReservationCancelledEvent;
 import com.nasr.core.event.ProductReservedEvent;
 import com.nasr.core.model.OrderDetailData;
 import com.nasr.productservice.command.api.command.CreateProductCommand;
@@ -53,12 +55,12 @@ public class ProductAggregate extends BaseAggregate<String> {
     @CommandHandler
     public void handle(ReserveProductCommand command) {
 
-        if (this.quantity<command.getQuantity())
+        if (this.quantity < command.getQuantity())
             throw new IllegalStateException("dont sufficient product exists in stock");
 
-        ProductReservedEvent event= ProductReservedEvent.builder()
+        ProductReservedEvent event = ProductReservedEvent.builder()
                 .customerId(command.getCustomerId())
-                .orderDetailData(new OrderDetailData(command.getProductId(),command.getQuantity()))
+                .orderDetailData(new OrderDetailData(command.getProductId(), command.getQuantity()))
                 .totalAmount(command.getTotalAmount())
                 .orderId(command.getOrderId())
                 .build();
@@ -67,10 +69,18 @@ public class ProductAggregate extends BaseAggregate<String> {
 
     }
 
-    @EventSourcingHandler
-    public void on(ProductReservedEvent event){
-        this.id=event.getProductId();
-        this.quantity-=event.getQuantity();
+    @CommandHandler
+    public void handle(CancelProductReservationCommand command) {
+
+        ProductReservationCancelledEvent event = ProductReservationCancelledEvent
+                .builder()
+                .id(command.getProductId())
+                .orderId(command.getOrderId())
+                .quantity(command.getQuantity())
+                .reason(command.getReason())
+                .build();
+
+        apply(event);
     }
 
     /* note when  apply event on command handler at first dispatch event to event handler for this aggregate
@@ -83,5 +93,17 @@ public class ProductAggregate extends BaseAggregate<String> {
         this.price = event.getPrice();
         this.quantity = event.getQuantity();
     }
+
+    @EventSourcingHandler
+    public void on(ProductReservedEvent event) {
+        this.quantity -= event.getQuantity();
+    }
+
+
+    @EventSourcingHandler
+    public void on(ProductReservationCancelledEvent event){
+        this.quantity+=event.getQuantity();
+    }
+
 
 }

@@ -1,5 +1,6 @@
 package com.nasr.productservice.query.api.eventhandler;
 
+import com.nasr.core.event.ProductReservationCancelledEvent;
 import com.nasr.core.event.ProductReservedEvent;
 import com.nasr.core.model.OrderDetailData;
 import com.nasr.productservice.core.event.ProductCreatedEvent;
@@ -36,8 +37,12 @@ public class ProductEventHandler {
     @EventHandler
     public void on(ProductReservedEvent event){
             productQueryService.reduceProductQuantity(
-                    new OrderDetailData(event.getProductId(),event.getQuantity())
+                    new OrderDetailData(event.getId(),event.getQuantity())
             );
     }
 
+    @EventHandler
+    public void on(ProductReservationCancelledEvent event){
+        productQueryService.increaseProductQuantity(event.getId(),event.getQuantity());
+    }
 }

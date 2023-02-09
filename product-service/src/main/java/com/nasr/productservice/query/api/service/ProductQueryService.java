@@ -15,4 +15,6 @@ public interface ProductQueryService {
     void save(Product product);
 
     void reduceProductQuantity(OrderDetailData orderDetailData);
+
+    void increaseProductQuantity(String id, Integer quantity);
 }
