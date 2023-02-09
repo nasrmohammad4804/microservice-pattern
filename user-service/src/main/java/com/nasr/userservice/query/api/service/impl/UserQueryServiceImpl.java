@@ -1,6 +1,6 @@
 package com.nasr.userservice.query.api.service.impl;
 
-import com.nasr.core.model.UserPaymentDetailResponseDto;
+import com.nasr.core.model.UserPaymentDetail;
 import com.nasr.userservice.core.exception.UserNotFoundException;
 import com.nasr.userservice.query.api.data.User;
 import com.nasr.userservice.query.api.repository.UserQueryRepository;
@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static com.nasr.core.model.UserPaymentDetail.PaymentDetail.builder;
+
 @Service
 @Transactional(readOnly = true)
 public class UserQueryServiceImpl implements UserQueryService {
@@ -19,17 +21,17 @@ public class UserQueryServiceImpl implements UserQueryService {
     private UserQueryRepository repository;
 
     @Override
-    public UserPaymentDetailResponseDto getUserPaymentDetail(String userId) {
+    public UserPaymentDetail getUserPaymentDetail(String userId) {
 
         User user = repository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("dont find any user with id: " + userId));
 
-        return UserPaymentDetailResponseDto.builder()
+        return UserPaymentDetail.builder()
                 .customerId(userId)
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .paymentDetail(
-                        UserPaymentDetailResponseDto.PaymentDetail.builder()
+                        builder()
                                 .cardNumber(user.getPaymentDetail().getCardNumber())
                                 .cvv2(user.getPaymentDetail().getCvv2())
                                 .expirationDate(user.getPaymentDetail().getExpirationDate())

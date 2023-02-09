@@ -1,6 +1,5 @@
 package com.nasr.userservice.query.api.init;
 
-import com.nasr.core.model.UserPaymentDetailResponseDto;
 import com.nasr.userservice.query.api.data.User;
 import com.nasr.userservice.query.api.data.embeddable.UserPayment;
 import com.nasr.userservice.query.api.service.UserQueryService;
