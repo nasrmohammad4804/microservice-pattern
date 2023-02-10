@@ -3,15 +3,11 @@ package com.nasr.orderservice.saga;
 import com.nasr.core.base.event.BaseEvent;
 import com.nasr.core.command.CancelPaymentProcessCommand;
 import com.nasr.core.command.CancelProductReservationCommand;
-import com.nasr.core.command.ProcessPaymentCommand;
 import com.nasr.core.command.ReserveProductCommand;
 import com.nasr.core.event.PaymentProcessCancelledEvent;
 import com.nasr.core.event.PaymentProcessedEvent;
 import com.nasr.core.event.ProductReservationCancelledEvent;
 import com.nasr.core.event.ProductReservedEvent;
-import com.nasr.core.model.OrderDetailData;
-import com.nasr.core.model.UserPaymentDetail;
-import com.nasr.core.query.GetUserPaymentDetailQuery;
 import com.nasr.orderservice.core.command.ApproveOrderCommand;
 import com.nasr.orderservice.core.command.RejectOrderCommand;
 import com.nasr.orderservice.core.event.OrderApprovedEvent;
@@ -22,18 +18,24 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
-import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.spring.stereotype.Saga;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.time.Duration;
+
+import static com.nasr.orderservice.core.constant.ConstantField.PAYMENT_PROCESSING_DEADLINE;
+import static com.nasr.orderservice.saga.util.DeadlineDataUtility.paymentProcessingDeadline;
 
 /*
  * saga instance start with orderCreatedEvent and maybe between process fail
  * then when saga ends with orderApprovedEvent that we know all step is successful
  * but if we arrive to orderRejectEvent we roll back all changes with reversOrder and
- * we can say transaction rollback confidentlly
+ * we can say transaction rollback confidently
  * */
 
 @Saga
@@ -45,8 +47,11 @@ public class OrderSaga {
     @Autowired
     private transient CommandGateway commandGateway;
 
+/*    @Autowired
+    private transient QueryGateway queryGateway;*/
+
     @Autowired
-    private transient QueryGateway queryGateway;
+    private transient DeadlineManager deadlineManager;
 
     @StartSaga
     @SagaEventHandler(associationProperty = "id", keyName = "orderId")
@@ -81,47 +86,16 @@ public class OrderSaga {
     public void handle(ProductReservedEvent event) {
         log.info("productReservedEvent received from product service with id :  {}", event.getId());
 
-        GetUserPaymentDetailQuery query = new GetUserPaymentDetailQuery(event.getCustomerId());
-
-        UserPaymentDetail userPaymentDetail;
-        try {
-
-            userPaymentDetail = queryGateway.query(query, UserPaymentDetail.class)
-                    .join();
-
-            log.info("userPaymentDetail successfully fetched from user-service for userId: {}  with name: {}",
-                    event.getCustomerId(), userPaymentDetail.getFirstName().concat(userPaymentDetail.getLastName()));
-
-        } catch (Exception e) {
-            log.error("getUserPaymentDetailQuery process was not successful !");
-
-            /* start compensating transaction for cancelProductReservation */
-            cancelProductReservation(event, e.getCause().getMessage());
-            return;
-        }
-
-
-        ProcessPaymentCommand command = ProcessPaymentCommand.builder()
-                .orderId(event.getOrderId())
-                .totalAmount(event.getTotalAmount())
-                .paymentDetail(userPaymentDetail.getPaymentDetail())
-                .orderDetailData(new OrderDetailData(event.getId(), event.getQuantity()))
-                .build();
-
-        CommandCallback<ProcessPaymentCommand, Object> callback = (commandMessage, commandResultMessage) -> {
-            if (commandResultMessage.isExceptional()) {
-                log.error("dont able to process payment command with cause : {}", commandResultMessage.exceptionResult().getMessage());
-                /* start compensating transaction for cancelProductReservation */
-                cancelProductReservation(event, commandResultMessage.exceptionResult().getMessage());
-            }
-        };
-        commandGateway.send(command, callback);
-
+        schedulePaymentProcessingDeadline(event);
     }
+
 
     @SagaEventHandler(associationProperty = "orderId")
     public void handle(PaymentProcessedEvent event) {
         log.info("paymentProcessedEvent received from payment-service with paymentId : {}", event.getId());
+
+        String deadlineId = paymentProcessingDeadline.remove(event.getOrderId());
+        deadlineManager.cancelSchedule(PAYMENT_PROCESSING_DEADLINE, deadlineId);
 
         ApproveOrderCommand command = new ApproveOrderCommand(event.getOrderId());
 
@@ -151,10 +125,10 @@ public class OrderSaga {
     }
 
     @SagaEventHandler(associationProperty = "orderId")
-    public void handle(PaymentProcessCancelledEvent event){
-        log.info("payment process reverted for paymentId : {}",event.getId());
+    public void handle(PaymentProcessCancelledEvent event) {
+        log.info("payment process reverted for paymentId : {}", event.getId());
         cancelProductReservation(
-                new ProductReservedEvent(event.getOrderId(),null,null,event.getOrderDetailData()),event.getReason()
+                new ProductReservedEvent(event.getOrderId(), null, null, event.getOrderDetailData()), event.getReason()
         );
     }
 
@@ -165,6 +139,20 @@ public class OrderSaga {
         log.info("order is rejected . Order Saga completed for orderId : " + event.getId());
     }
 
+    @DeadlineHandler(deadlineName = PAYMENT_PROCESSING_DEADLINE)
+    public void handlePaymentProcessingDeadline(ProductReservedEvent event) {
+        log.info("payment processing deadline took placed because order with id: {} dont payed", event.getOrderId());
+        paymentProcessingDeadline.remove(event.getOrderId());
+
+        String reason = String.format("dont pay for specific order : %s   after 1 hours ", event.getOrderId());
+        cancelProductReservation(event, reason);
+    }
+
+    private void schedulePaymentProcessingDeadline(ProductReservedEvent event) {
+        String deadlineId = deadlineManager.schedule(Duration.ofHours(1), PAYMENT_PROCESSING_DEADLINE, event);
+        paymentProcessingDeadline.put(event.getOrderId(), deadlineId);
+
+    }
 
     private void cancelProductReservation(ProductReservedEvent event, String reason) {
 

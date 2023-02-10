@@ -19,4 +19,10 @@ public class OrderDetailQueryServiceImpl implements OrderDetailQueryService {
     public void save(OrderDetail orderDetail) {
         repository.save(orderDetail);
     }
+
+    @Override
+    public OrderDetail getByOrderId(String orderId) {
+        return repository.findByOrderId(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("dont find any orderDetail with orderId : "+orderId));
+    }
 }

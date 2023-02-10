@@ -26,5 +26,4 @@ public class OrderCommandController {
         return ResponseEntity.ok(data);
     }
 
-
 }

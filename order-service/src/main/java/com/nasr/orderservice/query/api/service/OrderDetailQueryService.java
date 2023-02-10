@@ -5,4 +5,6 @@ import com.nasr.orderservice.query.api.data.OrderDetail;
 public interface OrderDetailQueryService {
 
     void save(OrderDetail orderDetail);
+
+    OrderDetail getByOrderId(String orderId);
 }

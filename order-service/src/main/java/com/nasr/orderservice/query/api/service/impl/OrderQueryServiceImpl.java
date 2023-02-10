@@ -3,6 +3,7 @@ package com.nasr.orderservice.query.api.service.impl;
 import com.nasr.orderservice.core.enumeration.OrderStatus;
 import com.nasr.orderservice.query.api.data.Order;
 import com.nasr.orderservice.query.api.data.OrderDetail;
+import com.nasr.orderservice.query.api.dto.OrderDto;
 import com.nasr.orderservice.query.api.repository.OrderQueryRepository;
 import com.nasr.orderservice.query.api.service.OrderDetailQueryService;
 import com.nasr.orderservice.query.api.service.OrderQueryService;
@@ -36,6 +37,12 @@ public class OrderQueryServiceImpl implements OrderQueryService {
                 .orElseThrow(() -> new IllegalArgumentException("dont find any order with id : " + orderId));
 
         order.setOrderStatus(orderStatus);
+    }
+
+    @Override
+    public OrderDto getOrderById(String orderId) {
+        return repository.findOrderById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("dont find any order with id : "+orderId));
     }
 
 }
