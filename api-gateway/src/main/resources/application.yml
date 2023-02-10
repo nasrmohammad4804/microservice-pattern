@@ -22,6 +22,12 @@ spring:
             uri: lb://ORDER-SERVICE
             predicates:
               - Path=/orders/**
+
+          - id: payment-service-route
+            uri: lb://PAYMENT-SERVICE
+            predicates:
+              - Path=/payments/**
+
   application:
     name: API-GATEWAY
 

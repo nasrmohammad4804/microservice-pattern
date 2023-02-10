@@ -47,9 +47,6 @@ public class OrderSaga {
     @Autowired
     private transient CommandGateway commandGateway;
 
-/*    @Autowired
-    private transient QueryGateway queryGateway;*/
-
     @Autowired
     private transient DeadlineManager deadlineManager;
 
