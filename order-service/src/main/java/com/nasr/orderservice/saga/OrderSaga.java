@@ -79,6 +79,9 @@ public class OrderSaga {
     //2. use query to userService and get Detail and after that continue other step
     //note - better is when using event sourcing or cqrs fetch data with query instead of http GET request
 
+    /*maybe user want to pay order on next time then instead of raise PaymentProcessCommand we schedule PaymentProcessingDeadline
+    * and if earlier than 1 hour received then continue transaction with saga flow otherwise we start compensating transaction in deadline event triggered */
+
     @SagaEventHandler(associationProperty = "orderId")
     public void handle(ProductReservedEvent event) {
         log.info("productReservedEvent received from product service with id :  {}", event.getId());
@@ -146,7 +149,7 @@ public class OrderSaga {
     }
 
     private void schedulePaymentProcessingDeadline(ProductReservedEvent event) {
-        String deadlineId = deadlineManager.schedule(Duration.ofHours(1), PAYMENT_PROCESSING_DEADLINE, event);
+        String deadlineId = deadlineManager.schedule(Duration.ofMinutes(1), PAYMENT_PROCESSING_DEADLINE, event);
         paymentProcessingDeadline.put(event.getOrderId(), deadlineId);
 
     }
