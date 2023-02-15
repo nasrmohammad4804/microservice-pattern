@@ -51,3 +51,14 @@ axon:
     processors:
       product-group:
         mode: subscribing
+
+# this logging level logs in console when snapshot created
+logging:
+  level:
+    org:
+      axonframework:
+        axonserver:
+          connector:
+            event:
+              axon:
+                AxonServerEventStore: debug

@@ -5,3 +5,26 @@ and if exception occurred in one of event handler block that as soon as possible
 rollback transaction (event sourcing with other event handler) if using subscribing event processing that manages
 in same thread it is useful whenever we want to handle transaction in same application using subscribing event processing
 but if want to handle exception and transaction in across different microservice we need to use saga pattern
+------------------------------------------------------------------------------
+snapshotting have 3 mechanism
+1 . after x number if events for example 4 event after first 4 event create snapshot and save last state of aggregate and for event 5 and 6 use this
+2 . regular interval we can create snapshot at specific interval  regular for example every day 9 pm
+3 . when loading takes longer than specified time . this is useful whenever you expect load event take specific time but
+it takes more time . that means lot of event loaded and we create snapshot for next event received use last snapshot created
+----------------------
+### important note about snapshot ###
+if you set count base snapshot for example every 3 event create new snapshot for aggregate with its identifier
+when 3 request send to command handler load 2 previous event from event store and after command valid raise event
+and because 3 event received then create new snapshot as same state of aggregate
+note -> create snapshot itself is event . that means after create 3 event
+snapshotTriggerDefinition raise event and snapShotter create snapshot for aggregate .
+means event for creating snapshot consider as event . and now we have 4 event
+and if received another 2 event in event store then create snapshot for aggregate again .
+##note##  -> event for create snapshot considering . don't think if received another 3 event create new snapshot
+rather if received another 2 event that create snapshot . because event for creating snapshot also considered
+
+at the end if saved 3 event for specific aggregate that create snapshot for this. and 1 event of 3 threshold used
+and if received another 2 event then create second snapshot for aggregate . means in fifth event that store in event store
+you have 2 snapshot . while confused why after before sixth event store in event store we have 2 snapshot
+answer is 1 event after third event store in event store raised  by snapShotTriggerDefinition and create snapshot
+hence this event is important and considered even thought you don't raised and raised automatically by axon framework

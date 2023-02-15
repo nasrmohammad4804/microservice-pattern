@@ -7,6 +7,7 @@ import com.nasr.core.event.ProductReservationCancelledEvent;
 import com.nasr.core.event.ProductReservedEvent;
 import com.nasr.core.model.OrderDetailData;
 import com.nasr.productservice.command.api.command.CreateProductCommand;
+import com.nasr.productservice.core.constant.ConstantField;
 import com.nasr.productservice.core.event.ProductCreatedEvent;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,13 +15,15 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.spring.stereotype.Aggregate;
 
+import java.lang.constant.Constable;
 import java.math.BigDecimal;
 
+import static com.nasr.productservice.core.constant.ConstantField.*;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
-@Aggregate
-@NoArgsConstructor
 @Getter
+@NoArgsConstructor
+@Aggregate(snapshotTriggerDefinition = SNAPSHOT_TRIGGER_DEFINITION_BEAN_NAME)
 public class ProductAggregate extends BaseAggregate<String> {
 
 
