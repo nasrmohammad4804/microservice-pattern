@@ -17,27 +17,28 @@ import static com.nasr.productservice.core.constant.ConstantField.PRODUCT_PROCES
 public class EventReplayController {
     @Autowired
     private EventProcessingConfiguration eventProcessingConfiguration;
+
     @PostMapping("/eventProcessor/reset")
     public ResponseEntity<?> replayEvents() throws Exception {
 
         try {
 
-            eventProcessingConfiguration
+            TrackingEventProcessor trackingEventProcessor = eventProcessingConfiguration
                     .eventProcessor(PRODUCT_PROCESSING_GROUP, TrackingEventProcessor.class)
-                    .ifPresent(trackingEventProcessor -> {
-                        trackingEventProcessor.shutDown();
-                        trackingEventProcessor.resetTokens();
-                        trackingEventProcessor.start();
+                    .orElseThrow(
+                            () -> new Exception(String.format("dont find any tracking event processor with name : [%s] in this instance", PRODUCT_PROCESSING_GROUP))
+                    );
 
-                    });
-            return ResponseEntity.ok("event processor with name : "+PRODUCT_PROCESSING_GROUP+" it was reset !");
+            trackingEventProcessor.shutDown();
+            trackingEventProcessor.resetTokens();
+            trackingEventProcessor.start();
+
+            return ResponseEntity.ok("event processor with name : " + PRODUCT_PROCESSING_GROUP + " it was reset !");
 
         } catch (Exception e) {
 
-            String message = String.format("dont find any tracking event processor with name : [%s] in this instance", PRODUCT_PROCESSING_GROUP);
-            log.error(message);
-
-            throw new Exception(message);
+            log.error(e.getMessage());
+            throw new Exception(e.getMessage());
         }
     }
 }
