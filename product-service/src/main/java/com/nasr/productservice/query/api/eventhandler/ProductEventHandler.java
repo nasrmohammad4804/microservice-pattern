@@ -52,7 +52,8 @@ public class ProductEventHandler {
         productQueryService.increaseProductQuantity(event.getId(), event.getQuantity(),eventDate);
     }
 
-    /* this method whenever reset token prepared call and executed before event would replay */
+    /* this method whenever reset token prepared call(eventTrackingProcessor.resetTokens())
+       and executed before event would replay(eventTrackingProcessor.start()) */
     @ResetHandler
     public void reset() {
         log.info("all product data deleted . because we want to replay event at beginning of event store for specific requirement !");
