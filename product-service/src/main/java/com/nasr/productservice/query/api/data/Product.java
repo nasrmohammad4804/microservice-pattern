@@ -13,6 +13,7 @@ import javax.persistence.UniqueConstraint;
 import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.Instant;
 
 import static com.nasr.productservice.query.api.data.Product.NAME;
 
@@ -28,7 +29,6 @@ public class Product extends BaseEntity<String> implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1;
-
     public static final String NAME="name";
 
     @Column(name = NAME)
@@ -38,6 +38,10 @@ public class Product extends BaseEntity<String> implements Serializable {
 
     private Integer quantity;
 
+    private Instant createAtDate;
+
+    private Instant lastUpdateDate;
+
 
     @Builder
     public Product(String id, String name, BigDecimal price, Integer quantity) {
@@ -45,5 +49,12 @@ public class Product extends BaseEntity<String> implements Serializable {
         this.name = name;
         this.price = price;
         this.quantity = quantity;
+    }
+
+    @Builder
+    public Product(String id, String name, BigDecimal price, Integer quantity, Instant createAtDate, Instant lastUpdateDate) {
+        this(id,name,price,quantity);
+        this.createAtDate = createAtDate;
+        this.lastUpdateDate = lastUpdateDate;
     }
 }

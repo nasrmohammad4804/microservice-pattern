@@ -50,7 +50,7 @@ axon:
   eventhandling:
     processors:
       product-group:
-        mode: subscribing
+        mode: tracking
 
 # this logging level logs in console when snapshot created
 logging:

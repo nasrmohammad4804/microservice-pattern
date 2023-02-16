@@ -9,4 +9,5 @@ public interface ProductLookupService {
 
     void save(ProductLookup product);
 
+    void deleteAll();
 }

@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 
 import static com.nasr.productservice.core.constant.ConstantMessage.*;
@@ -39,13 +40,19 @@ public class ProductQueryServiceImpl implements ProductQueryService {
 
     @Override
     @Transactional
-    public void reduceProductQuantity(OrderDetailData orderDetailData) {
-        repository.reduceQuantity(orderDetailData.getProductId(),orderDetailData.getOrderQuantity());
+    public void reduceProductQuantity(OrderDetailData orderDetailData, Instant eventDate) {
+        repository.reduceQuantity(orderDetailData.getProductId(),orderDetailData.getOrderQuantity(),eventDate);
     }
 
     @Override
     @Transactional
-    public void increaseProductQuantity(String id, Integer quantity) {
-        repository.increaseQuantity(id,quantity);
+    public void increaseProductQuantity(String id, Integer quantity,Instant eventDate) {
+        repository.increaseQuantity(id,quantity,eventDate);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAll() {
+        repository.deleteAll();
     }
 }
