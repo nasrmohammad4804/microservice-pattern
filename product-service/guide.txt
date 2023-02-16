@@ -28,3 +28,15 @@ and if received another 2 event then create second snapshot for aggregate . mean
 you have 2 snapshot . while confused why after before sixth event store in event store we have 2 snapshot
 answer is 1 event after third event store in event store raised  by snapShotTriggerDefinition and create snapshot
 hence this event is important and considered even thought you don't raised and raised automatically by axon framework
+
+---------------------------------
+
+###-------------------- tips about event-replay process --------------###
+after some time my business need to have createDate and lastUpdateDate for each product
+in normal flow for product that stored you cant to access those field
+but after that for every record changes those field applied . but we
+want to record that already exists have correct value for those field
+in this scenario we are using event replay (with tracking event processor)
+and change event handler for product processor to get timestamp time for event created
+then you need to delete all record from product database and lookup
+because token reset and applied all event from event store
