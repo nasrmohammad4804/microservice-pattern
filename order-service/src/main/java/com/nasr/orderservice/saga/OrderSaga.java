@@ -149,7 +149,7 @@ public class OrderSaga {
     }
 
     private void schedulePaymentProcessingDeadline(ProductReservedEvent event) {
-        String deadlineId = deadlineManager.schedule(Duration.ofMinutes(1), PAYMENT_PROCESSING_DEADLINE, event);
+        String deadlineId = deadlineManager.schedule(Duration.ofHours(1), PAYMENT_PROCESSING_DEADLINE, event);
         paymentProcessingDeadline.put(event.getOrderId(), deadlineId);
 
     }
